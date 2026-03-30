@@ -54,7 +54,34 @@
       text-align: center;
       margin-top: 10px;
       color: #666;
+    }/* 栽培カレンダーのスタイル */
+    .calendar-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-x: auto; /* スマホで横スクロール可能に */
     }
+    .calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .calendar-table th, .calendar-table td {
+      border: 1px solid #eee;
+      padding: 8px;
+      text-align: center;
+      min-width: 40px;
+    }
+    .month-header { background: #e8f5e9; font-weight: bold; }
+    .plant-name { text-align: left !important; font-weight: bold; background: #fafafa; position: sticky; left: 0; }
+    
+    /* 時期を表す色の設定 */
+    .period-plant { background-color: #ffcc80; border-radius: 4px; font-size: 10px; } /* 植え付け: オレンジ */
+    .period-harvest { background-color: #a5d6a7; border-radius: 4px; font-size: 10px; } /* 収穫: 緑 */
+    
     #searchInput {
       width: 100%; padding: 15px 20px; font-size: 16px; border: none; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; outline: none;
     }
@@ -134,6 +161,21 @@
     <p class="search-hint">
       🔎 カードをタップするとレシピ・詳細を参照できます
     </p>
+  </div>
+ 
+  <div class="calendar-container">
+    <h3 style="color: #2e7d32; text-align: center;">📅 栽培・収穫カレンダー（温暖地）</h3>
+    <table class="calendar-table">
+      <thead>
+        <tr class="month-header">
+          <th style="min-width: 100px;">産物名</th>
+          <th>1月</th><th>2月</th><th>3月</th><th>4月</th><th>5月</th><th>6月</th>
+          <th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
+        </tr>
+      </thead>
+      <tbody id="calendarBody">
+        </tbody>
+    </table>
   </div>
 
   <div id="status"></div>
@@ -278,6 +320,31 @@
       );
       displayData(filtered);
     });
+
+    const plantSchedule = [
+      { name: "アーティチョーク", plant: "3中-4末", harvest: "6始-6末" },
+      { name: "アーモンド", plant: "2中-3末", harvest: "8末-9末" },
+      { name: "アイスプラント", plant: "2末-3末", harvest: "5始-7末" }
+      // 必要に応じてスプレッドシートの内容を増やしてください
+    ];
+
+    function displayCalendar() {
+      const tbody = document.getElementById("calendarBody");
+      if (!tbody) return; // エラー防止
+      plantSchedule.forEach(item => {
+        const row = `<tr>
+          <td class="plant-name">${item.name}</td>
+          <td colspan="12" style="text-align: left; color: #555;">
+            <span class="period-plant" style="padding: 2px 6px;"> 植 </span> ${item.plant} 
+            <span class="period-harvest" style="margin-left:15px; padding: 2px 6px;"> 収 </span> ${item.harvest}
+          </td>
+        </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    // もともとあった loadData の前に実行を指示します
+    displayCalendar(); 
 
     loadData();
   </script>
