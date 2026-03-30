@@ -55,6 +55,7 @@
       margin-top: 10px;
       color: #666;
     }/* 栽培カレンダーのスタイル */
+    /* 栽培カレンダーのスタイル（ガントチャート版） */
     .calendar-container {
       max-width: 1200px;
       margin: 40px auto;
@@ -62,21 +63,49 @@
       padding: 20px;
       border-radius: 20px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      overflow-x: auto; /* スマホで横スクロール可能に */
+      overflow-x: auto;
     }
     .calendar-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      table-layout: fixed; /* 各月の幅を固定にする */
     }
-    .calendar-table th, .calendar-table td {
+    .calendar-table th {
+      background: #e8f5e9;
+      font-weight: bold;
       border: 1px solid #eee;
-      padding: 8px;
-      text-align: center;
-      min-width: 40px;
+      padding: 10px 5px;
     }
-    .month-header { background: #e8f5e9; font-weight: bold; }
-    .plant-name { text-align: left !important; font-weight: bold; background: #fafafa; position: sticky; left: 0; }
+    .calendar-table td {
+      border: 1px solid #eee;
+      padding: 4px 0; /* 上下の余白 */
+      text-align: center;
+      height: 45px; /* バーが表示される高さ */
+      position: relative; /* バーを配置する基準点 */
+    }
+
+    /* 植物名が表示される横棒（バー） */
+    .plant-bar {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 26px;
+      line-height: 26px;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 4px;
+      white-space: nowrap; /* 改行しない */
+      z-index: 10;
+      padding: 0 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+    .bar-plant { background-color: #ff9800; opacity: 0.9; }   /* 植え付け: オレンジ */
+    .bar-harvest { background-color: #4caf50; opacity: 0.9; } /* 収穫: 緑 */
     
     /* 時期を表す色の設定 */
     .period-plant { background-color: #ffcc80; border-radius: 4px; font-size: 10px; } /* 植え付け: オレンジ */
@@ -164,11 +193,10 @@
   </div>
  
   <div class="calendar-container">
-    <h3 style="color: #2e7d32; text-align: center;">📅 栽培・収穫カレンダー（温暖地）</h3>
+    <h3 style="color: #2e7d32; text-align: center;">📅 栽培・収穫スケジュール（温暖地）</h3>
     <table class="calendar-table">
       <thead>
         <tr class="month-header">
-          <th style="min-width: 100px;">産物名</th>
           <th>1月</th><th>2月</th><th>3月</th><th>4月</th><th>5月</th><th>6月</th>
           <th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th>
         </tr>
@@ -176,6 +204,9 @@
       <tbody id="calendarBody">
         </tbody>
     </table>
+    <div style="text-align: center; margin-top: 10px; font-size: 0.8rem;">
+      <span style="color: #ff9800;">■</span> 植え付け時期 / <span style="color: #4caf50;">■</span> 収穫時期
+    </div>
   </div>
 
   <div id="status"></div>
@@ -322,31 +353,42 @@
     });
 
     const plantSchedule = [
-      { name: "アーティチョーク", plant: "3中-4末", harvest: "6始-6末" },
-      { name: "アーモンド", plant: "2中-3末", harvest: "8末-9末" },
-      { name: "アイスプラント", plant: "2末-3末", harvest: "5始-7末" }
-      // 必要に応じてスプレッドシートの内容を増やしてください
+      { name: "アーティチョーク", pStart: 3, pEnd: 4, hStart: 6, hEnd: 6 },
+      { name: "アーモンド", pStart: 2, pEnd: 3, hStart: 8, hEnd: 9 },
+      { name: "アイスプラント", pStart: 2, pEnd: 3, hStart: 5, hEnd: 7 },
+      { name: "アサツキ", pStart: 8, pEnd: 9, hStart: 3, hEnd: 5 } // 例：3-5月収穫
     ];
 
     function displayCalendar() {
       const tbody = document.getElementById("calendarBody");
-      if (!tbody) return; // エラー防止
+      tbody.innerHTML = ""; // リセット
+
       plantSchedule.forEach(item => {
-        const row = `<tr>
-          <td class="plant-name">${item.name}</td>
-          <td colspan="12" style="text-align: left; color: #555;">
-            <span class="period-plant" style="padding: 2px 6px;"> 植 </span> ${item.plant} 
-            <span class="period-harvest" style="margin-left:15px; padding: 2px 6px;"> 収 </span> ${item.harvest}
-          </td>
-        </tr>`;
-        tbody.insertAdjacentHTML("beforeend", row);
+        const tr = document.createElement("tr");
+        
+        // 12ヶ月分のセルを作成
+        for (let i = 1; i <= 12; i++) {
+          const td = document.createElement("td");
+          
+          // 植え付け時期の描画
+          if (i === item.pStart) {
+            const width = (item.pEnd - item.pStart + 1) * 100; // 期間分伸ばす
+            td.innerHTML += `<div class="plant-bar bar-plant" style="width: ${width}%;">${item.name} (植)</div>`;
+          }
+          
+          // 収穫時期の描画
+          if (i === item.hStart) {
+            const width = (item.hEnd - item.hStart + 1) * 100;
+            td.innerHTML += `<div class="plant-bar bar-harvest" style="width: ${width}%;">${item.name} (収)</div>`;
+          }
+          
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
       });
     }
 
-    // もともとあった loadData の前に実行を指示します
-    displayCalendar(); 
-
-    loadData();
+    displayCalendar();
   </script>
 </body>
 </html>
